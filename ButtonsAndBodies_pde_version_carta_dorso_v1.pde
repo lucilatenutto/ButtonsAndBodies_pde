@@ -4,6 +4,8 @@ import fisica.*;                             // Importa todas las clases de la l
 
 FWorld world;                                // Declara una variable global para el "mundo físico" donde viven los cuerpos.
 
+FBox placeholder;
+
 color bodyColor = #6E0595;                   // Define un color (tipo 'color' de Processing) para los cuerpos principales.
 color hoverColor = #F5B502;                  // Color que se usará cuando pase el mouse por encima.
 
@@ -29,6 +31,20 @@ void setup() {
   world = new FWorld();                      // Crea un nuevo mundo físico.
   world.setEdges();                          // Crea los bordes (limitadores) del mundo: top/bottom/left/right por defecto.
   world.setGravity(0, 0);                    // Establece la gravedad en el mundo: (0,0) = sin gravedad horizontal ni vertical.
+
+  // Crear placeholder en el centro
+  float pw = 150;   // ancho
+  float ph = 220;   // alto
+  
+  placeholder = new FBox(pw, ph);
+  placeholder.setPosition(width/2, height/2);
+  placeholder.setStatic(true);         // No se mueve
+  placeholder.setFillColor(color(230));
+  placeholder.setStrokeColor(color(120));
+  placeholder.setStrokeWeight(3);
+  
+  world.add(placeholder);
+
 
   for (int i=0; i<cardCount; i++) {        // Bucle para crear 'spiderCount' spiders al inicio.
     createCard();                          // Llama a la función que crea una spider (cuerpo principal + patas).
