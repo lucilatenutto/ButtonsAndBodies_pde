@@ -87,7 +87,7 @@ void createCard() {
 
   mains.add(main);                            // Almacena la referencia en la lista 'mains' para poder interactuar con él luego.
 
-/*
+  /*
   for (int i=0; i<legCount; i++) {            // Bucle para crear cada "pata" asociada a esta cabeza.
     float x = legSize * cos(i*TWO_PI/3) + posX; 
     // Calcula una posición objetivo X para la pata usando coseno. 
@@ -144,14 +144,7 @@ void mousePressed() {
   // Solo podemos agarrar cartas, no patas ni placeholder
   if (b != null && mains.contains(b)) {
     cartaSeleccionada = b;
-
-    // Si estaba fija dentro del placeholder, la volvemos dinámica para sacarla
-    // Descomentá esto y revienta cuando lo saques del placeholder
-    //cartaSeleccionada.setStatic(false);
-
     arrastrando = true;
-    
-    
   }
 }
 
