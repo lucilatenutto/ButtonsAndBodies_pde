@@ -5,6 +5,8 @@ import fisica.*;                             // Importa todas las clases de la l
 FWorld world;                                // Declara una variable global para el "mundo físico" donde viven los cuerpos.
 
 FBox placeholder;
+FBody cartaSeleccionada = null;
+boolean arrastrando = false;
 
 color bodyColor = #6E0595;                   // Define un color (tipo 'color' de Processing) para los cuerpos principales.
 color hoverColor = #F5B502;                  // Color que se usará cuando pase el mouse por encima.
@@ -43,6 +45,9 @@ void setup() {
   placeholder.setStrokeColor(color(120));
   placeholder.setStrokeWeight(3);
   
+  placeholder.setGrabbable(false);
+  placeholder.setStatic(true);
+  
   world.add(placeholder);
 
 
@@ -64,34 +69,6 @@ void draw() {
     cuerpo.setFillColor(color(255,0,0,velo));
   }
 }
-
-//void mouseMoved() {
-//  FBody hovered = world.getBody(mouseX, mouseY); // Obtiene el cuerpo bajo la posición actual del mouse (si hay alguno).
-
-//  for (int i=0; i<mains.size(); i++) {       // Recorre la lista de cuerpos principales (mains).
-//    FBody other = (FBody)mains.get(i);       // Recupera el i-ésimo FBody de la lista (casteo necesario por ser raw ArrayList).
-
-//    if (hovered == other) {                  // Si el cuerpo bajo el mouse es exactamente este cuerpo principal...
-//      //setJointsDrawable(other, true);        // ...activa el dibujo de sus joints (los hace visibles).
-//      //setJointsColor(other, hoverColor);     // ...cambia el color de sus joints y de los cuerpos conectados al color hover.
-//    } 
-//    else {
-//      //setJointsDrawable(other, false);       // Si no está bajo el mouse, oculta los joints de ese cuerpo.
-//      //setJointsColor(other, bodyColor);      // Y restablece el color normal de sus cuerpos/joints.
-//    }
-//  }
-//}
-
-/*
-void keyPressed() {
-  try {
-    //saveFrame("screenshot.png");             // Al presionar cualquier tecla, intenta guardar una captura de pantalla.
-  } 
-  catch (Exception e) {
-    // Captura cualquier excepción que lance saveFrame() y la ignora (no hace nada).
-  }
-}
-*/
 
 void createCard() {
   float posX = random(mainSize/2, width-mainSize/2);   // Elige una posición X aleatoria dentro del canvas, evitando que la cabeza salga de los bordes.
@@ -157,4 +134,58 @@ void setJointsDrawable(FBody b, boolean c) {
     FJoint j = (FJoint)l.get(i);              // Castea el elemento a FJoint.
     j.setDrawable(c);                         // Activa/desactiva el dibujo del joint según el booleano 'c'.
   }
+}
+
+void mousePressed() {
+  // Detecta si tocamos alguna carta
+  FBody b = world.getBody(mouseX, mouseY);
+
+  if (b != null && mains.contains(b)) {
+    cartaSeleccionada = b;
+    arrastrando = true;
+    
+    // Congela la carta mientras la arrastramos
+    cartaSeleccionada.setStatic(true);
+  }
+}
+
+void mouseDragged() {
+  if (arrastrando && cartaSeleccionada != null) {
+    cartaSeleccionada.setPosition(mouseX, mouseY);
+  }
+}
+
+void mouseReleased() {
+  if (cartaSeleccionada != null) {
+
+    // Verificar si la carta está dentro del área del placeholder
+    if (estaSobrePlaceholder(cartaSeleccionada)) {
+      // Encajarla en el centro del placeholder
+      cartaSeleccionada.setPosition(placeholder.getX(), placeholder.getY());
+    }
+
+    // Vuelve a ser dinámica
+    cartaSeleccionada.setStatic(false);
+
+    cartaSeleccionada = null;
+    arrastrando = false;
+  }
+}
+
+boolean estaSobrePlaceholder(FBody carta) {
+  float cx = carta.getX();
+  float cy = carta.getY();
+  float cw = ((FBox)carta).getWidth();
+  float ch = ((FBox)carta).getHeight();
+
+  float px = placeholder.getX();
+  float py = placeholder.getY();
+  float pw = placeholder.getWidth();
+  float ph = placeholder.getHeight();
+
+  // chequeo AABB (Axis-Aligned Bounding Box)
+  return (cx + cw/2 > px - pw/2 &&
+          cx - cw/2 < px + pw/2 &&
+          cy + ch/2 > py - ph/2 &&
+          cy - ch/2 < py + ph/2);
 }
