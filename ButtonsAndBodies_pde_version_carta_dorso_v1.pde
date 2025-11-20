@@ -18,7 +18,7 @@ int mainSize = 40;                           // Tamaño (diámetro) del cuerpo p
 int legCount = 5;                           // Cantidad de "patas" por spider (aquí se crean 'legs' como cuerpos separados).
 float legSize = 100;                         // Longitud deseada de los joints que unen la cabeza a cada pata.
 
-ArrayList mains = new ArrayList();           // Lista que guardará los cuerpos principales creados (raw ArrayList sin generics).
+ArrayList<FBody> mains = new ArrayList<FBody>();           // Lista que guardará los cuerpos principales creados (raw ArrayList sin generics).
 ArrayList<FCircle> brillitos = new ArrayList<FCircle>();  
 
 void setup() {
@@ -27,6 +27,7 @@ void setup() {
   smooth();                                  // Activa el antialiasing para dibujado más suave.
 
   dorsoCarta = loadImage("Dorso cartas.PNG"); // Carga el archivo de imagen
+  dorsoCarta.resize(int(mainSize*1.7), int(mainSize*3));
 
   Fisica.init(this);                         // Inicializa la librería Fisica pasándole la instancia de sketch (obligatorio).
 
@@ -78,7 +79,6 @@ void createCard() {
   main.setPosition(posX, posY);               // Coloca la cabeza en (posX, posY).
   main.setVelocity(random(-20,20), random(-20,20)); // Le da una velocidad inicial aleatoria (x,y).
  
-  dorsoCarta.resize(int(mainSize*1.7), int(mainSize*3));
   main.attachImage(dorsoCarta);
  
   main.setNoStroke();                         // Quita el borde al dibujarlo.
@@ -87,6 +87,7 @@ void createCard() {
 
   mains.add(main);                            // Almacena la referencia en la lista 'mains' para poder interactuar con él luego.
 
+/*
   for (int i=0; i<legCount; i++) {            // Bucle para crear cada "pata" asociada a esta cabeza.
     float x = legSize * cos(i*TWO_PI/3) + posX; 
     // Calcula una posición objetivo X para la pata usando coseno. 
@@ -112,6 +113,7 @@ void createCard() {
     j.setFrequency(0.5);                      // Controla la "frecuencia" / respuesta del joint (afecta comportamiento tipo resort).
     world.add(j);                             // Añade el joint al mundo para que actúe en la simulación.
   }
+  */
 }
 
 void setJointsColor(FBody b, color c) {
@@ -141,13 +143,15 @@ void mousePressed() {
 
   // Solo podemos agarrar cartas, no patas ni placeholder
   if (b != null && mains.contains(b)) {
-
     cartaSeleccionada = b;
 
     // Si estaba fija dentro del placeholder, la volvemos dinámica para sacarla
-    cartaSeleccionada.setStatic(false);
+    // Descomentá esto y revienta cuando lo saques del placeholder
+    //cartaSeleccionada.setStatic(false);
 
     arrastrando = true;
+    
+    
   }
 }
 
