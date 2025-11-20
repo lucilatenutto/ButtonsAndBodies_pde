@@ -137,17 +137,20 @@ void setJointsDrawable(FBody b, boolean c) {
 }
 
 void mousePressed() {
-  // Detecta si tocamos alguna carta
   FBody b = world.getBody(mouseX, mouseY);
 
+  // Solo podemos agarrar cartas, no patas ni placeholder
   if (b != null && mains.contains(b)) {
+
     cartaSeleccionada = b;
+
+    // Si estaba fija dentro del placeholder, la volvemos dinámica para sacarla
+    cartaSeleccionada.setStatic(false);
+
     arrastrando = true;
-    
-    // Congela la carta mientras la arrastramos
-    cartaSeleccionada.setStatic(true);
   }
 }
+
 
 void mouseDragged() {
   if (arrastrando && cartaSeleccionada != null) {
@@ -158,14 +161,17 @@ void mouseDragged() {
 void mouseReleased() {
   if (cartaSeleccionada != null) {
 
-    // Verificar si la carta está dentro del área del placeholder
     if (estaSobrePlaceholder(cartaSeleccionada)) {
-      // Encajarla en el centro del placeholder
+      // Colocar perfectamente al centro del placeholder
       cartaSeleccionada.setPosition(placeholder.getX(), placeholder.getY());
-    }
 
-    // Vuelve a ser dinámica
-    cartaSeleccionada.setStatic(false);
+      // Fijar la carta para que NO se mueva
+      cartaSeleccionada.setStatic(true);
+    } 
+    else {
+      // Si no está en el placeholder, se mueve libre
+      cartaSeleccionada.setStatic(false);
+    }
 
     cartaSeleccionada = null;
     arrastrando = false;
