@@ -1,149 +1,206 @@
 import fisica.*;
 
-import fisica.*;                             // Importa todas las clases de la librería Fisica (wrapper de Box2D para Processing).
+// ====================================================================
+// === VARIABLES GLOBALES ===
+// ====================================================================
 
-FWorld world;                                // Declara una variable global para el "mundo físico" donde viven los cuerpos.
+FWorld world;                                // Mundo físico de Fisica (Box2D)
 
-FBox placeholder;
-FBody cartaSeleccionada = null;
+// --- Animación de Flip ---
+boolean animandoFlip = false;
+FBox cartaFlipping = null;   // La carta que actualmente está girando
+float flipProgress = 0;      // 0 -> inicio, 1 -> fin
+
+PImage[] frentes;           // Arreglo de imágenes frontales
+int frenteElegido = -1;      // Índice de la carta a mostrar
+
+FBox placeholder;           // Caja estática central
+FBody cartaSeleccionada = null; // Carta siendo arrastrada
 boolean arrastrando = false;
 
-color bodyColor = #6E0595;                   // Define un color (tipo 'color' de Processing) para los cuerpos principales.
-color hoverColor = #F5B502;                  // Color que se usará cuando pase el mouse por encima.
+// Tamaños originales de las cartas para la simulación del flip
+float originalCardWidth;
+float originalCardHeight;
 
-PImage dorsoCarta; // Declara la variable PImage
+// Colores
+color bodyColor = #6E0595;                   
+color hoverColor = #F5B502;                  
 
-int cardCount = 10;                        // Cantidad de "spiders" (entidades principales) a crear al inicio.
-int mainSize = 40;                           // Tamaño (diámetro) del cuerpo principal (la "cabeza" de la araña) en píxeles.
-int legCount = 5;                           // Cantidad de "patas" por spider (aquí se crean 'legs' como cuerpos separados).
-float legSize = 100;                         // Longitud deseada de los joints que unen la cabeza a cada pata.
+PImage dorsoCarta; // Imagen del dorso de la carta
 
-ArrayList<FBody> mains = new ArrayList<FBody>();           // Lista que guardará los cuerpos principales creados (raw ArrayList sin generics).
-ArrayList<FCircle> brillitos = new ArrayList<FCircle>();  
+// Parámetros de creación
+int cardCount = 10;                       
+int mainSize = 40;                           
+int legCount = 5;  // Patas (Comentado en createCard)
+float legSize = 100;
+
+ArrayList<FBody> mains = new ArrayList<FBody>();           // Cuerpos principales (Cartas)
+ArrayList<FCircle> brillitos = new ArrayList<FCircle>();  // Patas (Si se usan)
+
+// ====================================================================
+// === SETUP Y DRAW ===
+// ====================================================================
 
 void setup() {
-  //size(1400, 700);                            // Crea la ventana de dibujo de 400x400 px.
   fullScreen();
-  smooth();                                  // Activa el antialiasing para dibujado más suave.
+  smooth();                                 
 
-  dorsoCarta = loadImage("Dorso cartas.PNG"); // Carga el archivo de imagen
-  dorsoCarta.resize(int(mainSize*1.7), int(mainSize*3));
+  // --- 1. Inicialización de tamaños ---
+  originalCardWidth = mainSize * 1.7;
+  originalCardHeight = mainSize * 3;
 
-  Fisica.init(this);                         // Inicializa la librería Fisica pasándole la instancia de sketch (obligatorio).
+  // --- 2. Carga y Redimensión de Imágenes ---
+  // Asegúrate de que las rutas de las imágenes sean correctas
+  dorsoCarta = loadImage("Dorso cartas.PNG"); 
+  dorsoCarta.resize(int(originalCardWidth), int(originalCardHeight));
+ 
+  frentes = new PImage[5];
+  frentes[0] = loadImage("La Emperatriz.png");
+  frentes[1] = loadImage("El Sol.png");
+  frentes[2] = loadImage("El Ermitanio.PNG");
+  frentes[3] = loadImage("La justicia.PNG");
+  frentes[4] = loadImage("La Luna.png");
+  
+  for (int i=0; i<frentes.length; i++) {
+    frentes[i].resize(int(originalCardWidth), int(originalCardHeight));
+  }
 
-  world = new FWorld();                      // Crea un nuevo mundo físico.
-  world.setEdges();                          // Crea los bordes (limitadores) del mundo: top/bottom/left/right por defecto.
-  world.setGravity(0, 0);                    // Establece la gravedad en el mundo: (0,0) = sin gravedad horizontal ni vertical.
+  // --- 3. Inicialización de Fisica ---
+  Fisica.init(this);                         
+  world = new FWorld();                     
+  world.setEdges();                         
+  world.setGravity(0, 0);                   
 
-  // Crear placeholder en el centro
+  // --- 4. Crear Placeholder ---
   float pw = 150;   // ancho
   float ph = 220;   // alto
   
   placeholder = new FBox(pw, ph);
   placeholder.setPosition(width/2, height/2);
-  placeholder.setStatic(true);         // No se mueve
+  placeholder.setStatic(true);         
   placeholder.setFillColor(color(230));
   placeholder.setStrokeColor(color(120));
   placeholder.setStrokeWeight(3);
-  
   placeholder.setGrabbable(false);
-  placeholder.setStatic(true);
-  
   world.add(placeholder);
 
-
-  for (int i=0; i<cardCount; i++) {        // Bucle para crear 'spiderCount' spiders al inicio.
-    createCard();                          // Llama a la función que crea una spider (cuerpo principal + patas).
+  // --- 5. Crear Cartas ---
+  for (int i=0; i<cardCount; i++) {        
+    createCard();                          
   }
 }
 
 void draw() {
-  background(255);                           // Limpia la pantalla con fondo blanco.
-  world.step();                              // Avanza la simulación física un paso (actualiza posiciones/velocidades).
-  world.draw();                              // Dibuja todos los cuerpos y joints del mundo en el canvas.
+  background(255);                           
+  world.step();                             
+  world.draw();                             
   
+  // --- Animación de brillo (brillitos) ---
   for(FCircle cuerpo:  brillitos){
     float vx = cuerpo.getVelocityX();
     float vy = cuerpo.getVelocityY();
-    float velo = constrain(map(abs(vx+vy),1,30,0,255),0,255);
-    
-    cuerpo.setFillColor(color(255,0,0,velo));
+    float velo = constrain(map(abs(vx) + abs(vy), 1, 30, 0, 255), 0, 255);
+    cuerpo.setFillColor(color(255, 0, 0, velo)); 
   }
+  
+  // --- Animación de flip (Volteo de Carta) ---
+  if (animandoFlip && cartaFlipping != null) {
+    
+    flipProgress += 0.05;
+  
+    float scaleX;
+    if (flipProgress < 0.5) {
+      scaleX = map(flipProgress, 0, 0.5, 1, 0);
+    } else {
+      if (frenteElegido != -1) {
+        cartaFlipping.attachImage(frentes[frenteElegido]);
+      }
+      scaleX = map(flipProgress, 0.5, 1, 0, 1);
+    }
+  
+    float anchoTemporal = max(originalCardWidth * scaleX, 3);
+  
+    // 1. Guardamos datos
+    float x = cartaFlipping.getX();
+    float y = cartaFlipping.getY();
+    float rot = cartaFlipping.getRotation();
+  
+    // 2. CAMBIAMOS el tamaño (carta ya está fuera del mundo porque flipCard la removió)
+    cartaFlipping.setWidth(anchoTemporal);
+    cartaFlipping.setHeight(originalCardHeight);
+  
+    // 3. Dibujamos manualmente porque NO está en world.draw()
+    pushMatrix();
+    translate(x, y);
+    rotate(rot);
+    imageMode(CENTER);
+    //image(cartaFlipping.getImage(), 0, 0, anchoTemporal, originalCardHeight);
+    popMatrix();
+  
+    // FIN DEL FLIP
+    if (flipProgress >= 1) {
+      animandoFlip = false;
+      flipProgress = 0;
+  
+      // Restaurar tamaño final
+      cartaFlipping.setWidth(originalCardWidth);
+      cartaFlipping.setHeight(originalCardHeight);
+  
+      // REINSERTAR al mundo UNA SOLA VEZ
+      world.add(cartaFlipping);
+      cartaFlipping.setPosition(x, y);
+      cartaFlipping.setRotation(rot);
+  
+      cartaFlipping = null;
+    }
+  }
+
 }
 
-void createCard() {
-  float posX = random(mainSize/2, width-mainSize/2);   // Elige una posición X aleatoria dentro del canvas, evitando que la cabeza salga de los bordes.
-  float posY = random(mainSize/2, height-mainSize/2);  // Lo mismo para la posición Y.
 
-  FBox main = new FBox(mainSize*1.7,mainSize*3);       // Crea un cuerpo circular (la "cabeza") de diámetro mainSize.
-  main.setPosition(posX, posY);               // Coloca la cabeza en (posX, posY).
-  main.setVelocity(random(-20,20), random(-20,20)); // Le da una velocidad inicial aleatoria (x,y).
+// ====================================================================
+// === FUNCIONES DE JUEGO Y MOUSE ===
+// ====================================================================
+
+void createCard() {
+  float posX = random(originalCardWidth/2, width-originalCardWidth/2);
+  float posY = random(originalCardHeight/2, height-originalCardHeight/2);
+
+  FBox main = new FBox(originalCardWidth, originalCardHeight);
+  main.setPosition(posX, posY);
+  main.setVelocity(random(-20,20), random(-20,20));
  
   main.attachImage(dorsoCarta);
  
-  main.setNoStroke();                         // Quita el borde al dibujarlo.
-  main.setGroupIndex(2);                      // Asigna un índice de grupo para control de colisiones (ver nota más abajo).
-  world.add(main);                            // Añade el cuerpo principal al mundo físico.
+  main.setNoStroke();
+  main.setGroupIndex(2);
+  world.add(main);
 
-  mains.add(main);                            // Almacena la referencia en la lista 'mains' para poder interactuar con él luego.
-
-  /*
-  for (int i=0; i<legCount; i++) {            // Bucle para crear cada "pata" asociada a esta cabeza.
-    float x = legSize * cos(i*TWO_PI/3) + posX; 
-    // Calcula una posición objetivo X para la pata usando coseno. 
-    // NOTA: aquí se usa i*TWO_PI/3 (ver nota al final: probablemente querías i*TWO_PI/legCount).
-    float y = legSize * sin(i*TWO_PI/3) + posY;
-    // Calcula la posición objetivo Y usando seno. Se usa el mismo ángulo que en X.
-
-    FCircle leg = new FCircle(mainSize/2);   // Crea la "pata" como un círculo más pequeño (radio = mainSize/2).
-    leg.setPosition(posX, posY);             // Inicialmente sitúa la pata en la misma posición de la cabeza.
-    leg.setVelocity(random(-20,20), random(-20,20)); // Le da una velocidad inicial aleatoria.
-    leg.setFillColor(bodyColor);              // Mismo color que el cuerpo principal.
-    leg.setNoStroke();                         // Sin borde en el dibujo.
-    leg.setGrabbable(false);
-    world.add(leg);   // Añade la pata al mundo como cuerpo independiente.
-    brillitos.add(leg);
-
-    FDistanceJoint j = new FDistanceJoint(main, leg); // Crea un joint de distancia entre main (cabeza) y leg.
-    j.setLength(legSize);                     // Establece la longitud del joint (distancia objetivo) a legSize.
-    j.setNoStroke();                          // Quita el trazo del joint (si lo dibuja).
-    j.setStroke(0);                           // Define el ancho del trazo (0 aquí).
-    j.setFill(0);                             // Define relleno (no es muy relevante para joints de línea).
-    j.setDrawable(false);                     // Inicialmente no dibuja el joint (se usa mouseMoved para mostrarlo).
-    j.setFrequency(0.5);                      // Controla la "frecuencia" / respuesta del joint (afecta comportamiento tipo resort).
-    world.add(j);                             // Añade el joint al mundo para que actúe en la simulación.
-  }
-  */
+  mains.add(main);
 }
 
-void setJointsColor(FBody b, color c) {
-  ArrayList l = b.getJoints();                // Recupera la lista de joints asociados al cuerpo 'b'.
+void flipCard(FBox carta, int indexFrente) {
+  if (!animandoFlip) {
+    cartaFlipping = carta;
+    frenteElegido = indexFrente;
+    flipProgress = 0;
+    animandoFlip = true;
 
-  for (int i=0; i<l.size(); i++) {            // Recorre esa lista de joints.
-    FJoint j = (FJoint)l.get(i);              // Castea cada elemento a FJoint.
-    j.setStrokeColor(c);                      // Cambia el color del trazo del joint.
-    j.setFillColor(c);                        // Cambia el color de relleno del joint (si aplica).
-    j.getBody1().setFillColor(c);             // Cambia el color del primer cuerpo conectado por el joint.
-    j.getBody2().setFillColor(c);             // Cambia el color del segundo cuerpo conectado por el joint.
-    // Nota: esto pinta también los cuerpos conectados: útil para destacar visualmente la conexión.
+    // SACAR del mundo durante el flip para evitar errores Box2D
+    world.remove(cartaFlipping);
   }
 }
 
-void setJointsDrawable(FBody b, boolean c) {
-  ArrayList l = b.getJoints();                // Recupera los joints del cuerpo 'b'.
-
-  for (int i=0; i<l.size(); i++) {            // Recorre todos los joints.
-    FJoint j = (FJoint)l.get(i);              // Castea el elemento a FJoint.
-    j.setDrawable(c);                         // Activa/desactiva el dibujo del joint según el booleano 'c'.
-  }
-}
 
 void mousePressed() {
   FBody b = world.getBody(mouseX, mouseY);
 
-  // Solo podemos agarrar cartas, no patas ni placeholder
-  if (b != null && mains.contains(b)) {
+  // Solo se puede arrastrar si NO hay una animación de flip en curso
+  if (!animandoFlip && b != null && mains.contains(b)) {
     cartaSeleccionada = b;
+    
+    // Si estaba fija, la liberamos para arrastrarla
+    cartaSeleccionada.setStatic(false); 
     arrastrando = true;
   }
 }
@@ -159,11 +216,17 @@ void mouseReleased() {
   if (cartaSeleccionada != null) {
 
     if (estaSobrePlaceholder(cartaSeleccionada)) {
-      // Colocar perfectamente al centro del placeholder
+      // 1. Colocar perfectamente al centro del placeholder
       cartaSeleccionada.setPosition(placeholder.getX(), placeholder.getY());
 
-      // Fijar la carta para que NO se mueva
+      // 2. Fijar la carta (la hacemos estática)
       cartaSeleccionada.setStatic(true);
+      
+      // 3. INICIA LA ANIMACIÓN DE FLIP
+      // Elegimos un frente aleatorio
+      int nuevoFrente = int(random(frentes.length)); 
+      flipCard((FBox)cartaSeleccionada, nuevoFrente); 
+
     } 
     else {
       // Si no está en el placeholder, se mueve libre
@@ -178,7 +241,7 @@ void mouseReleased() {
 boolean estaSobrePlaceholder(FBody carta) {
   float cx = carta.getX();
   float cy = carta.getY();
-  float cw = ((FBox)carta).getWidth();
+  float cw = ((FBox)carta).getWidth(); 
   float ch = ((FBox)carta).getHeight();
 
   float px = placeholder.getX();
@@ -186,9 +249,29 @@ boolean estaSobrePlaceholder(FBody carta) {
   float pw = placeholder.getWidth();
   float ph = placeholder.getHeight();
 
-  // chequeo AABB (Axis-Aligned Bounding Box)
+  // chequeo AABB
   return (cx + cw/2 > px - pw/2 &&
           cx - cw/2 < px + pw/2 &&
           cy + ch/2 > py - ph/2 &&
           cy - ch/2 < py + ph/2);
+}
+
+// Funciones auxiliares (manteniendo las originales)
+void setJointsColor(FBody b, color c) {
+  ArrayList l = b.getJoints();
+  for (int i=0; i<l.size(); i++) {
+    FJoint j = (FJoint)l.get(i);
+    j.setStrokeColor(c);
+    j.setFillColor(c);
+    j.getBody1().setFillColor(c);
+    j.getBody2().setFillColor(c);
+  }
+}
+
+void setJointsDrawable(FBody b, boolean c) {
+  ArrayList l = b.getJoints();
+  for (int i=0; i<l.size(); i++) {
+    FJoint j = (FJoint)l.get(i);
+    j.setDrawable(c);
+  }
 }
