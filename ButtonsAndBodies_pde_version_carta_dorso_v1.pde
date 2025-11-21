@@ -7,7 +7,17 @@ import fisica.*;
 FWorld world;
 FBox placeholder;
 
+int cantidadCartas = 8;
 ArrayList<Carta> cartas = new ArrayList<Carta>();
+
+ArrayList<FCircle> brillitos = new ArrayList<FCircle>();  
+int cardCount = 10;                        // Cantidad de "spiders" (entidades principales) a crear al inicio.
+int mainSize = 40;                           // Tamaño (diámetro) del cuerpo principal (la "cabeza" de la araña) en píxeles.
+int legCount = 5;                           // Cantidad de "patas" por spider (aquí se crean 'legs' como cuerpos separados).
+float legSize = 100;                         // Longitud deseada de los joints que unen la cabeza a cada pata.
+color bodyColor = #6E0595;                   // Define un color (tipo 'color' de Processing) para los cuerpos principales.
+color hoverColor = #F5B502;                  // Color que se usará cuando pase el mouse por encima.
+
 
 PImage dorso;
 PImage[] frentes;
@@ -16,6 +26,8 @@ Carta cartaSeleccionada = null;
 boolean arrastrando = false;
 
 boolean flipeando = false;
+
+
 
 // ==========================================================
 // =============== SETUP ====================================
@@ -59,7 +71,7 @@ void setup() {
   world.add(placeholder);
 
   // Crear cartas
-  for (int i = 0; i < 1; i++) {
+  for (int i = 0; i < cantidadCartas; i++) {
     float x = random(200, width - 200);
     float y = random(150, height - 150);
 
@@ -82,12 +94,9 @@ void draw() {
 
   world.step();
   
-  println("draw"); //<>//
-  placeholder.draw(this);
-  println("post draw pre dibujar"); //<>//
-  
-  println("dibujar"); //<>//
-  // Dibujar cuerpos EXCEPTO el placeholder
+  placeholder.draw(this); //<>//
+   //<>//
+  // Dibujar cuerpos EXCEPTO el placeholder //<>//
   ArrayList<FBody> bodies = world.getBodies();
   for (FBody b : bodies) {
     if (b == placeholder) continue;
@@ -95,12 +104,18 @@ void draw() {
   
     b.draw(this);
   }
-  println("post dibujar pre flip");
 
   // Dibujar flips
   if(flipeando) {
-    println("actualizar flip");
     for (Carta c : cartas) c.actualizarFlip();
+  }
+  
+  for(FCircle cuerpo:  brillitos){
+    float vx = cuerpo.getVelocityX();
+    float vy = cuerpo.getVelocityY();
+    float velo = constrain(map(abs(vx+vy),1,30,0,255),0,255);
+    
+    cuerpo.setFillColor(color(255,0,0,velo));
   }
 }
 
@@ -121,7 +136,6 @@ void mousePressed() {
     for (Carta c : cartas) {
       if (c.cuerpo == b) {
         cartaSeleccionada = c;
-        //cartaSeleccionada.cuerpo.setStatic(false);
         arrastrando = true;
       }
     }
@@ -201,6 +215,32 @@ class Carta {
     cuerpo.setDensity(0.1);
     cuerpo.setRestitution(0.3);
     cuerpo.attachImage(imagenActual);
+    
+      for (int i=0; i<legCount; i++) {            // Bucle para crear cada "pata" asociada a esta cabeza.
+        float xx = legSize * cos(i*TWO_PI/3) + x; 
+        // Calcula una posición objetivo X para la pata usando coseno. 
+        // NOTA: aquí se usa i*TWO_PI/3 (ver nota al final: probablemente querías i*TWO_PI/legCount).
+        float yy = legSize * sin(i*TWO_PI/3) + y;
+        // Calcula la posición objetivo Y usando seno. Se usa el mismo ángulo que en X.
+    
+        FCircle leg = new FCircle(mainSize/2);   // Crea la "pata" como un círculo más pequeño (radio = mainSize/2).
+        leg.setPosition(x, y);             // Inicialmente sitúa la pata en la misma posición de la cabeza.
+        leg.setVelocity(random(-20,20), random(-20,20)); // Le da una velocidad inicial aleatoria.
+        leg.setFillColor(bodyColor);              // Mismo color que el cuerpo principal.
+        leg.setNoStroke();                         // Sin borde en el dibujo.
+        leg.setGrabbable(false);
+        world.add(leg);   // Añade la pata al mundo como cuerpo independiente.
+        brillitos.add(leg);
+    
+        FDistanceJoint j = new FDistanceJoint(cuerpo, leg); // Crea un joint de distancia entre main (cabeza) y leg.
+        j.setLength(legSize);                     // Establece la longitud del joint (distancia objetivo) a legSize.
+        j.setNoStroke();                          // Quita el trazo del joint (si lo dibuja).
+        j.setStroke(0);                           // Define el ancho del trazo (0 aquí).
+        j.setFill(0);                             // Define relleno (no es muy relevante para joints de línea).
+        j.setDrawable(false);                     // Inicialmente no dibuja el joint (se usa mouseMoved para mostrarlo).
+        j.setFrequency(0.5);                      // Controla la "frecuencia" / respuesta del joint (afecta comportamiento tipo resort).
+        world.add(j);                             // Añade el joint al mundo para que actúe en la simulación.
+    }
   }
 
   void setFrente(PImage img) {
