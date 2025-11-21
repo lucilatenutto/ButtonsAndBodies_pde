@@ -15,6 +15,8 @@ PImage[] frentes;
 Carta cartaSeleccionada = null;
 boolean arrastrando = false;
 
+boolean flipeando = false;
+
 // ==========================================================
 // =============== SETUP ====================================
 // ==========================================================
@@ -57,7 +59,7 @@ void setup() {
   world.add(placeholder);
 
   // Crear cartas
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < 1; i++) {
     float x = random(200, width - 200);
     float y = random(150, height - 150);
 
@@ -76,14 +78,30 @@ void setup() {
 // ==========================================================
 
 void draw() {
-  background(255);
+  background(255); //<>//
 
   world.step();
-  world.draw();
+  
+  println("draw"); //<>//
+  placeholder.draw(this);
+  println("post draw pre dibujar"); //<>//
+  
+  println("dibujar"); //<>//
+  // Dibujar cuerpos EXCEPTO el placeholder
+  // DESPUES DE TERMINAR DE FLIPEAR Y QUERER DIBUJAR LA CARTA SE DESFASA ACÁ
+  for (int i = 0; i < world.getBodies().size(); i++) {
+    FBody b = (FBody) world.getBodies().get(i);
+  
+    if (b != placeholder && !isBodyFlipping(b)) {
+      b.draw(this);
+    }
+  }
+  println("post dibujar pre flip");
 
-  // Actualizar flips
-  for (Carta c : cartas) {
-    c.actualizarFlip();
+  // Dibujar flips
+  if(flipeando) {
+    println("actualizar flip");
+    for (Carta c : cartas) c.actualizarFlip();
   }
 }
 
@@ -98,7 +116,7 @@ void mousePressed() {
   }
 
   FBody b = world.getBody(mouseX, mouseY);
-
+  
   if (b != null) {
     for (Carta c : cartas) {
       if (c.cuerpo == b) {
@@ -123,13 +141,15 @@ void mouseReleased() {
   if (estaSobrePlaceholder(cartaSeleccionada)) {
 
     // centrar
-    cartaSeleccionada.cuerpo.setPosition(placeholder.getX(), placeholder.getY());
+    //cartaSeleccionada.cuerpo.setPosition(placeholder.getX(), placeholder.getY());
     cartaSeleccionada.cuerpo.setStatic(true);
+    //cartaSeleccionada.cuerpo.setRotation(0);
+
 
     // iniciar flip
     cartaSeleccionada.flip();
   }
-
+   
   cartaSeleccionada = null;
   arrastrando = false;
 }
@@ -149,6 +169,16 @@ boolean estaSobrePlaceholder(Carta c) {
           cx - cw/2 < px + pw/2 &&
           cy + ch/2 > py - ph/2 &&
           cy - ch/2 < py + ph/2);
+}
+
+// Devuelve true si el body corresponde a una Carta que está flippando
+boolean isBodyFlipping(FBody body) {
+  for (Carta c : cartas) {
+    if (c.cuerpo == body && c.estaFlipping) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // ==========================================================
@@ -189,62 +219,71 @@ class Carta {
     if (estaFlipping) return;
 
     estaFlipping = true;
+    flipeando = true;
     flipProgress = 0;
 
     // Sacar del mundo para modificar tamaño
     world.remove(cuerpo);
+    
+    cuerpo.setPosition(placeholder.getX(), placeholder.getY());
   }
 
   // ----------------- ACTUALIZAR FLIP ------------------
-void actualizarFlip() {
-
-  // ⭐ IMPORTANTE: si NO está flippando, NO dibujes nada extra
-  if (!estaFlipping) return;
-
-  flipProgress += 0.05;
-
-  float scaleX;
-
-  if (flipProgress < 0.5) {
-    scaleX = map(flipProgress, 0, 0.5, 1, 0);
-  } else {
-
-    if (imagenFrente != null) imagenActual = imagenFrente;
-
-    scaleX = map(flipProgress, 0.5, 1, 0, 1);
-  }
-
-  float wTemp = max(wOriginal * scaleX, 2);
-
-  float x = cuerpo.getX();
-  float y = cuerpo.getY();
-  float rot = cuerpo.getRotation();
-
-  cuerpo.setWidth(wTemp);
-  cuerpo.setHeight(hOriginal);
-
-  // --- Dibujar SOLO durante flip ---
-  pushMatrix();
-  translate(x, y);
-  rotate(rot);
-  imageMode(CENTER);
-  image(imagenActual, 0, 0, wTemp, hOriginal);
-  popMatrix();
-
-  if (flipProgress >= 1) {
-
-    estaFlipping = false;
-    flipProgress = 0;
-
-    cuerpo.setWidth(wOriginal);
+  void actualizarFlip() {
+    if (!estaFlipping) return; //<>//
+  
+    flipProgress += 0.05;   //<>//
+  
+    float scaleX;
+  
+    if (flipProgress < 0.5) {
+      scaleX = map(flipProgress, 0, 0.5, 1, 0);
+    } else {
+      if (imagenFrente != null) imagenActual = imagenFrente;
+      scaleX = map(flipProgress, 0.5, 1, 0, 1);
+    }
+  
+    float wTemp = max(wOriginal * scaleX, 2);
+  
+    // Siempre anclar al placeholder durante la animación
+    float x = placeholder.getX();
+    float y = placeholder.getY();
+    float rot = 0;
+  
+    // Cambiar tamaño y volver a centrar (evita el corrimiento)
+    cuerpo.setWidth(wTemp);
     cuerpo.setHeight(hOriginal);
-
-    world.add(cuerpo);
     cuerpo.setPosition(x, y);
     cuerpo.setRotation(rot);
+  
+    // --- DIBUJO MANUAL DEL FLIP ---
+    pushMatrix();
+    translate(x, y);
+    rotate(rot);
+    imageMode(CENTER);
+    image(imagenActual, 0, 0, wTemp, hOriginal);
+    popMatrix();
+  
+    if (flipProgress >= 1) {
+  
+      estaFlipping = false;
+      flipeando = false;
+      flipProgress = 0;
+  
+      cuerpo.setWidth(wOriginal);
+      cuerpo.setHeight(hOriginal);
 
-    cuerpo.attachImage(imagenActual);
+      println("267");
+      cuerpo.setPosition(x, y);
+      println("269");
+      cuerpo.setRotation(rot);
+      println("270");
+      cuerpo.attachImage(imagenActual);
+      
+      world.add(cuerpo);
+    }
+    println("salgo de la funcion");
   }
-}
+
 
 }
