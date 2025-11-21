@@ -88,13 +88,12 @@ void draw() {
   
   println("dibujar"); //<>//
   // Dibujar cuerpos EXCEPTO el placeholder
-  // DESPUES DE TERMINAR DE FLIPEAR Y QUERER DIBUJAR LA CARTA SE DESFASA ACÁ
-  for (int i = 0; i < world.getBodies().size(); i++) {
-    FBody b = (FBody) world.getBodies().get(i);
+  ArrayList<FBody> bodies = world.getBodies();
+  for (FBody b : bodies) {
+    if (b == placeholder) continue;
+    if (isBodyFlipping(b)) continue;
   
-    if (b != placeholder && !isBodyFlipping(b)) {
-      b.draw(this);
-    }
+    b.draw(this);
   }
   println("post dibujar pre flip");
 
@@ -115,13 +114,14 @@ void mousePressed() {
     if (c.estaFlipping) return;
   }
 
-  FBody b = world.getBody(mouseX, mouseY);
+  FBody b = world.getBody(mouseX, mouseY); 
+  if (b == placeholder) return;
   
-  if (b != null) {
+  if (b   != null) { //<>//
     for (Carta c : cartas) {
       if (c.cuerpo == b) {
         cartaSeleccionada = c;
-        cartaSeleccionada.cuerpo.setStatic(false);
+        //cartaSeleccionada.cuerpo.setStatic(false);
         arrastrando = true;
       }
     }
@@ -141,10 +141,7 @@ void mouseReleased() {
   if (estaSobrePlaceholder(cartaSeleccionada)) {
 
     // centrar
-    //cartaSeleccionada.cuerpo.setPosition(placeholder.getX(), placeholder.getY());
     cartaSeleccionada.cuerpo.setStatic(true);
-    //cartaSeleccionada.cuerpo.setRotation(0);
-
 
     // iniciar flip
     cartaSeleccionada.flip();
@@ -180,10 +177,6 @@ boolean isBodyFlipping(FBody body) {
   }
   return false;
 }
-
-// ==========================================================
-// =============== CLASE CARTA ==============================
-// ==========================================================
 
 class Carta {
 
@@ -250,12 +243,6 @@ class Carta {
     float y = placeholder.getY();
     float rot = 0;
   
-    // Cambiar tamaño y volver a centrar (evita el corrimiento)
-    cuerpo.setWidth(wTemp);
-    cuerpo.setHeight(hOriginal);
-    cuerpo.setPosition(x, y);
-    cuerpo.setRotation(rot);
-  
     // --- DIBUJO MANUAL DEL FLIP ---
     pushMatrix();
     translate(x, y);
@@ -263,26 +250,17 @@ class Carta {
     imageMode(CENTER);
     image(imagenActual, 0, 0, wTemp, hOriginal);
     popMatrix();
-  
+    imageMode(CORNER);
+
     if (flipProgress >= 1) {
+      cuerpo.attachImage(imagenActual);  
+      cuerpo.setStatic(false);
+      world.add(cuerpo);
   
       estaFlipping = false;
       flipeando = false;
-      flipProgress = 0;
-  
-      cuerpo.setWidth(wOriginal);
-      cuerpo.setHeight(hOriginal);
-
-      println("267");
-      cuerpo.setPosition(x, y);
-      println("269");
-      cuerpo.setRotation(rot);
-      println("270");
-      cuerpo.attachImage(imagenActual);
-      
-      world.add(cuerpo);
+      flipProgress = 0;  
     }
-    println("salgo de la funcion");
   }
 
 
