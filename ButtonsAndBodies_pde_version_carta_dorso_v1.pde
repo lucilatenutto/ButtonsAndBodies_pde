@@ -143,19 +143,17 @@ void draw() {
     float vy = cuerpo.getVelocityY();
     float velo = constrain(map(abs(vx+vy),1,30,0,255),0,255); 
     
-    // Si la imagen del brillo cargó, la dibujamos con tint()
+    // 1. DIBUJAR EL BRILLO USANDO LA IMAGEN (TINT/OPACIDAD)
     if (imgBrilli != null) {
-      pushStyle(); // Guarda el estilo actual
+      pushStyle(); // Guarda el estilo (incluyendo tint y imageMode)
       tint(255, velo); // Aplica el tinte blanco con la opacidad calculada
-      imageMode(CENTER); // Dibuja la imagen centrada en la posición del cuerpo
+      imageMode(CENTER); // Ajusta la imagen para centrarla en el cuerpo
       image(imgBrilli, cuerpo.getX(), cuerpo.getY(), imgBrilli.width, imgBrilli.height);
-      popStyle(); // Restaura el estilo original
-      imageMode(CORNER);  
-    } else {
-      // Si la imagen no cargó, volvemos a dibujar un círculo rojo transparente
-      cuerpo.setFillColor(color(255,0,0,velo));
-      cuerpo.draw(this); // Dibujar el cuerpo de Física (si es un círculo)
-    }
+      popStyle(); // Restaura el estilo original (restaura el imageMode a CORNER)
+    } 
+    
+    // 2. DIBUJAR EL CUERPO DE FÍSICA (FCircle)
+    cuerpo.setFillColor(color(145,77,219,velo)); 
   }
 }
 
@@ -263,12 +261,13 @@ class Carta {
         float yy = legSize * sin(i*TWO_PI/3) + y;
         // Calcula la posición objetivo Y usando seno. Se usa el mismo ángulo que en X.
     
-        FCircle leg = new FCircle(mainSize/2);   // Crea la "pata" como un círculo más pequeño (radio = mainSize/2).
+        FCircle leg = new FCircle(mainSize/4);   // Crea la "pata" como un círculo más pequeño (radio = mainSize/2).
         leg.setPosition(x, y);             // Inicialmente sitúa la pata en la misma posición de la cabeza.
         leg.setVelocity(random(-20,20), random(-20,20)); // Le da una velocidad inicial aleatoria.
         leg.setFillColor(bodyColor);              // Mismo color que el cuerpo principal.
         leg.setNoStroke();                         // Sin borde en el dibujo.
         leg.setGrabbable(false);
+        
         world.add(leg);   // Añade la pata al mundo como cuerpo independiente.
         brillitos.add(leg);
     
