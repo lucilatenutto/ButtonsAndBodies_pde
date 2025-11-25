@@ -27,6 +27,7 @@ PImage[] frentes;
 ArrayList<Integer> indicesDisponibles; 
 
 PImage imagenFondo;
+PImage imgBrilli;
 
 Carta cartaSeleccionada = null;
 boolean arrastrando = false;
@@ -50,6 +51,8 @@ void setup() {
 
   // --- Cargar imágenes ---
   dorso = loadImage("Dorso cartas.PNG");
+  imgBrilli = loadImage("brilli2.png");
+  imgBrilli.resize(75,75);
 
   frentes = new PImage[cantidadCartas];
   frentes[0] = loadImage("La Emperatriz.png");
@@ -141,6 +144,7 @@ void draw() {
     float velo = constrain(map(abs(vx+vy),1,30,0,255),0,255);
     
     cuerpo.setFillColor(color(255,0,0,velo));
+    cuerpo.attachImage(imgBrilli);
   }
 }
 
