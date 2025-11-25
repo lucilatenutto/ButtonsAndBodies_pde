@@ -57,7 +57,7 @@ void setup() {
   // Carga y redimensiona cada imagen
   imgBrillis[0] = loadImage("brilli1.png");
   imgBrillis[1] = loadImage("brilli2.png");
-  imgBrillis[2] = loadImage("brilli3.png");
+ // imgBrillis[2] = loadImage("brilli3.png");
   
   int brilloSize = 75;
   for (int i = 0; i < numBrillos; i++) {
