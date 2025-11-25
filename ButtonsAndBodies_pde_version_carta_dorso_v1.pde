@@ -1,4 +1,7 @@
 import fisica.*;
+import java.util.Collections; // Necesario para usar shuffle()
+import java.util.ArrayList;
+
 
 // ==========================================================
 // =============== VARIABLES GLOBALES =======================
@@ -7,7 +10,7 @@ import fisica.*;
 FWorld world;
 FBox placeholder;
 
-int cantidadCartas = 8;
+int cantidadCartas = 7;
 ArrayList<Carta> cartas = new ArrayList<Carta>();
 
 ArrayList<FCircle> brillitos = new ArrayList<FCircle>();  
@@ -21,6 +24,9 @@ color hoverColor = #F5B502;                  // Color que se usará cuando pase 
 
 PImage dorso;
 PImage[] frentes;
+ArrayList<Integer> indicesDisponibles; 
+
+PImage imagenFondo;
 
 Carta cartaSeleccionada = null;
 boolean arrastrando = false;
@@ -36,16 +42,23 @@ boolean flipeando = false;
 void setup() {
   fullScreen();
   smooth();
+  
+  
+  imagenFondo = loadImage("Tablero.png"); 
+  imagenFondo.resize(width, height); // Ajusta la imagen al tamaño de la ventana
+ 
 
   // --- Cargar imágenes ---
   dorso = loadImage("Dorso cartas.PNG");
 
-  frentes = new PImage[5];
+  frentes = new PImage[cantidadCartas];
   frentes[0] = loadImage("La Emperatriz.png");
   frentes[1] = loadImage("El Sol.png");
   frentes[2] = loadImage("El Ermitanio.PNG");
   frentes[3] = loadImage("La justicia.PNG");
   frentes[4] = loadImage("La Luna.png");
+  frentes[5] = loadImage("La torre.png");
+  frentes[6] = loadImage("Rueda de la fortuna.png");
 
   // Redimensionar todo
   int w = 150;
@@ -64,11 +77,21 @@ void setup() {
   placeholder = new FBox(w + 20, h + 20);
   placeholder.setPosition(width/2, height/2);
   placeholder.setStatic(true);
-  placeholder.setFillColor(color(220));
+  placeholder.setFillColor(color(255));
   placeholder.setStrokeColor(color(100));
   placeholder.setStrokeWeight(4);
   placeholder.setGrabbable(false);
   world.add(placeholder);
+
+
+  // Lógica para asegurar frentes únicos y aleatorios
+  indicesDisponibles = new ArrayList<Integer>();
+  for (int i = 0; i < frentes.length; i++) {
+    indicesDisponibles.add(i);
+  }
+
+  // Barajar (shuffle) la lista de índices
+  Collections.shuffle(indicesDisponibles);
 
   // Crear cartas
   for (int i = 0; i < cantidadCartas; i++) {
@@ -77,9 +100,10 @@ void setup() {
 
     Carta c = new Carta(x, y, w, h, dorso);
 
-    // asignar frente random
-    c.setFrente(frentes[int(random(frentes.length))]);
-
+    // Asignar frente único usando el índice barajado (usa módulo % para reciclar si es necesario)
+    int indiceFrente = indicesDisponibles.get(i);
+    c.setFrente(frentes[indiceFrente]);
+    
     cartas.add(c);
     world.add(c.cuerpo);
   }
@@ -90,7 +114,8 @@ void setup() {
 // ==========================================================
 
 void draw() {
-  background(255); //<>//
+  image(imagenFondo, 0, 0); // Dibuja la imagen desde la esquina superior izquierda
+ //<>//
 
   world.step();
   
