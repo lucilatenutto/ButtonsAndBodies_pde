@@ -138,13 +138,24 @@ void draw() {
     for (Carta c : cartas) c.actualizarFlip();
   }
   
-  for(FCircle cuerpo:  brillitos){
+  for(FCircle cuerpo: brillitos){
     float vx = cuerpo.getVelocityX();
     float vy = cuerpo.getVelocityY();
-    float velo = constrain(map(abs(vx+vy),1,30,0,255),0,255);
+    float velo = constrain(map(abs(vx+vy),1,30,0,255),0,255); 
     
-    cuerpo.setFillColor(color(255,0,0,velo));
-    cuerpo.attachImage(imgBrilli);
+    // Si la imagen del brillo cargó, la dibujamos con tint()
+    if (imgBrilli != null) {
+      pushStyle(); // Guarda el estilo actual
+      tint(255, velo); // Aplica el tinte blanco con la opacidad calculada
+      imageMode(CENTER); // Dibuja la imagen centrada en la posición del cuerpo
+      image(imgBrilli, cuerpo.getX(), cuerpo.getY(), imgBrilli.width, imgBrilli.height);
+      popStyle(); // Restaura el estilo original
+      imageMode(CORNER);  
+    } else {
+      // Si la imagen no cargó, volvemos a dibujar un círculo rojo transparente
+      cuerpo.setFillColor(color(255,0,0,velo));
+      cuerpo.draw(this); // Dibujar el cuerpo de Física (si es un círculo)
+    }
   }
 }
 
