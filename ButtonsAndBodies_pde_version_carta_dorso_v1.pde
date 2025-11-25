@@ -13,7 +13,7 @@ FBox placeholder;
 int cantidadCartas = 7;
 ArrayList<Carta> cartas = new ArrayList<Carta>();
 
-ArrayList<FCircle> brillitos = new ArrayList<FCircle>();  
+ArrayList<Brillo> brillitos = new ArrayList<Brillo>();  
 int cardCount = 10;                        // Cantidad de "spiders" (entidades principales) a crear al inicio.
 int mainSize = 40;                           // Tamaño (diámetro) del cuerpo principal (la "cabeza" de la araña) en píxeles.
 int legCount = 5;                           // Cantidad de "patas" por spider (aquí se crean 'legs' como cuerpos separados).
@@ -27,7 +27,9 @@ PImage[] frentes;
 ArrayList<Integer> indicesDisponibles; 
 
 PImage imagenFondo;
-PImage imgBrilli;
+
+int numBrillos = 2;
+PImage[] imgBrillis;
 
 Carta cartaSeleccionada = null;
 boolean arrastrando = false;
@@ -49,10 +51,18 @@ void setup() {
   imagenFondo.resize(width, height); // Ajusta la imagen al tamaño de la ventana
  
 
-  // --- Cargar imágenes ---
   dorso = loadImage("Dorso cartas.PNG");
-  imgBrilli = loadImage("brilli2.png");
-  imgBrilli.resize(75,75);
+  imgBrillis = new PImage[numBrillos];
+
+  // Carga y redimensiona cada imagen
+  imgBrillis[0] = loadImage("brilli1.png");
+  imgBrillis[1] = loadImage("brilli2.png");
+  imgBrillis[2] = loadImage("brilli3.png");
+  
+  int brilloSize = 75;
+  for (int i = 0; i < numBrillos; i++) {
+      imgBrillis[i].resize(brilloSize, brilloSize); 
+  }
 
   frentes = new PImage[cantidadCartas];
   frentes[0] = loadImage("La Emperatriz.png");
@@ -138,23 +148,31 @@ void draw() {
     for (Carta c : cartas) c.actualizarFlip();
   }
   
-  for(FCircle cuerpo: brillitos){
+  // --- DIBUJAR BRILLOS CON IMAGEN Y OPACIDAD (Y RESTAURAR imageMode) ---
+  for(Brillo b : brillitos){
+    FCircle cuerpo = b.cuerpo; // Obtenemos el cuerpo de Física
+    PImage imgBrillo = b.imagen; // Obtenemos la imagen asignada
+    
     float vx = cuerpo.getVelocityX();
     float vy = cuerpo.getVelocityY();
     float velo = constrain(map(abs(vx+vy),1,30,0,255),0,255); 
     
-    // 1. DIBUJAR EL BRILLO USANDO LA IMAGEN (TINT/OPACIDAD)
-    if (imgBrilli != null) {
-      pushStyle(); // Guarda el estilo (incluyendo tint y imageMode)
-      tint(255, velo); // Aplica el tinte blanco con la opacidad calculada
-      imageMode(CENTER); // Ajusta la imagen para centrarla en el cuerpo
-      image(imgBrilli, cuerpo.getX(), cuerpo.getY(), imgBrilli.width, imgBrilli.height);
-      popStyle(); // Restaura el estilo original (restaura el imageMode a CORNER)
+    // 1. DIBUJAR LA IMAGEN DEL BRILLO CON TINT/OPACIDAD
+    if (imgBrillo != null) {
+      pushStyle(); 
+      tint(255, velo); 
+      imageMode(CENTER); 
+      // Usamos la imagen específica del objeto Brillo
+      image(imgBrillo, cuerpo.getX(), cuerpo.getY(), imgBrillo.width, imgBrillo.height);
+      popStyle(); 
     } 
     
-    // 2. DIBUJAR EL CUERPO DE FÍSICA (FCircle)
+    // 2. DIBUJAR EL CUERPO DE FÍSICA (FCircle) si no fue ocultado.
+    // Aunque ya usamos setDrawable(false), mantenemos la opacidad de color por si acaso.
     cuerpo.setFillColor(color(145,77,219,velo)); 
+    // cuerpo.draw(this); // Comentado si usas setDrawable(false)
   }
+  //
 }
 
 // ==========================================================
@@ -261,15 +279,24 @@ class Carta {
         float yy = legSize * sin(i*TWO_PI/3) + y;
         // Calcula la posición objetivo Y usando seno. Se usa el mismo ángulo que en X.
     
-        FCircle leg = new FCircle(mainSize/4);   // Crea la "pata" como un círculo más pequeño (radio = mainSize/2).
+        FCircle leg = new FCircle(mainSize/4);   // Crea la "pata" como un círculo más pequeño (radio = mainSize/4).
         leg.setPosition(x, y);             // Inicialmente sitúa la pata en la misma posición de la cabeza.
         leg.setVelocity(random(-20,20), random(-20,20)); // Le da una velocidad inicial aleatoria.
         leg.setFillColor(bodyColor);              // Mismo color que el cuerpo principal.
-        leg.setNoStroke();                         // Sin borde en el dibujo.
+        leg.setNoStroke();        // Sin borde en el dibujo.
+        //leg.setDrawable(false); // Seguimos ocultando el círculo de Física
         leg.setGrabbable(false);
         
         world.add(leg);   // Añade la pata al mundo como cuerpo independiente.
-        brillitos.add(leg);
+        
+        // --- ASIGNACIÓN DE IMAGEN ALEATORIA AL BRILLO ---
+        // 1. Selecciona una imagen de brillo al azar
+        int indiceRandom = int(random(imgBrillis.length));
+        PImage brilloRandom = imgBrillis[indiceRandom];
+        
+        // 2. Crea un nuevo objeto Brillo y añádelo a la lista
+        brillitos.add(new Brillo(leg, brilloRandom));
+        // -------------------------------------------------
     
         FDistanceJoint j = new FDistanceJoint(cuerpo, leg); // Crea un joint de distancia entre main (cabeza) y leg.
         j.setLength(legSize);                     // Establece la longitud del joint (distancia objetivo) a legSize.
@@ -343,4 +370,14 @@ class Carta {
   }
 
 
+}
+
+class Brillo {
+    FCircle cuerpo;
+    PImage imagen;
+
+    Brillo(FCircle c, PImage img) {
+        this.cuerpo = c;
+        this.imagen = img;
+    }
 }
