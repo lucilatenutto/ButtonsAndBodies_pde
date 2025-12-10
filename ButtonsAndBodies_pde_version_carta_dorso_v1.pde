@@ -51,7 +51,7 @@ void setup() {
   imagenFondo.resize(width, height); // Ajusta la imagen al tamaño de la ventana
  
 
-  dorso = loadImage("Dorso cartas.PNG");
+  dorso = loadImage("dorsocartas.png");
   imgBrillis = new PImage[numBrillos];
 
   // Carga y redimensiona cada imagen
@@ -65,13 +65,13 @@ void setup() {
   }
 
   frentes = new PImage[cantidadCartas];
-  frentes[0] = loadImage("La Emperatriz.png");
-  frentes[1] = loadImage("El Sol.png");
-  frentes[2] = loadImage("El Ermitanio.PNG");
-  frentes[3] = loadImage("La justicia.PNG");
-  frentes[4] = loadImage("La Luna.png");
-  frentes[5] = loadImage("La torre.png");
-  frentes[6] = loadImage("Rueda de la fortuna.png");
+  frentes[0] = loadImage("laemperatriz.png");
+  frentes[1] = loadImage("elsol.png");
+  frentes[2] = loadImage("elermitanio.png");
+  frentes[3] = loadImage("lajusticia.png");
+  frentes[4] = loadImage("laluna.png");
+  frentes[5] = loadImage("latorre.png");
+  frentes[6] = loadImage("ruedadelafortuna.png");
 
   // Redimensionar todo
   int w = 150;
