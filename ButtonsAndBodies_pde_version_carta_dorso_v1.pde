@@ -55,7 +55,7 @@ void setup() {
   imgBrillis = new PImage[numBrillos];
 
   // Carga y redimensiona cada imagen
-  imgBrillis[0] = loadImage("brilli6.png");
+  imgBrillis[0] = loadImage("brilli8.png");
   imgBrillis[1] = loadImage("brilli2.png");
   imgBrillis[2] = loadImage("brilli4.png");
   
