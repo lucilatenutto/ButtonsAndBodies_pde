@@ -28,7 +28,7 @@ ArrayList<Integer> indicesDisponibles;
 
 PImage imagenFondo;
 
-int numBrillos = 2;
+int numBrillos = 3;
 PImage[] imgBrillis;
 
 Carta cartaSeleccionada = null;
@@ -55,11 +55,11 @@ void setup() {
   imgBrillis = new PImage[numBrillos];
 
   // Carga y redimensiona cada imagen
-  imgBrillis[0] = loadImage("brilli1.png");
+  imgBrillis[0] = loadImage("brilli6.png");
   imgBrillis[1] = loadImage("brilli2.png");
- // imgBrillis[2] = loadImage("brilli3.png");
+  imgBrillis[2] = loadImage("brilli4.png");
   
-  int brilloSize = 75;
+  int brilloSize = 90;
   for (int i = 0; i < numBrillos; i++) {
       imgBrillis[i].resize(brilloSize, brilloSize); 
   }
